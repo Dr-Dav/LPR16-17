@@ -1,50 +1,23 @@
-package com.texttwist.server;
+package com.texttwist.client;
+import javax.swing.SwingUtilities;
 
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.concurrent.ExecutorService;
-
-public class Main {
+public class Main implements Runnable {
 
 	public static void main(String[] args) {
-		TwistServer server;
-		ServerConfiguration conf;
+		System.setProperty("apple.eawt.quitStrategy", "CLOSE_ALL_WINDOWS"); // Trap cmd+q in Mac Systems
+		SwingUtilities.invokeLater(new Main());
+	}
+	
+	@Override
+	public void run() {
 		try {
-			conf = new ServerConfiguration("serverConfig.conf");
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-			return;
+			ClientConfiguration config = new ClientConfiguration("clientConfig.conf");
+			@SuppressWarnings("unused")
+			TwistClient c = new TwistClient(config);
 		}
-		System.out.println("Canonical path: " + conf.getBaseDir());
-		try {
-			server = new TwistServer(conf);
-		} catch (IOException e) {
-			System.err.println("An error occurred while starting the server: ");
+		catch(Exception e) {
 			e.printStackTrace();
-			return;
-		}
-		ExecutorService executor = Executors.newSingleThreadExecutor();
-		executor.submit(new Runnable() {
-			@Override
-			public void run() {
-				try(BufferedReader input = new BufferedReader(new InputStreamReader(System.in))) {
-					while(!input.readLine().equals("exit"));
-					server.exit();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
-		});
-		server.start();
-		executor.shutdown();
-		try {
-			executor.awaitTermination(100, TimeUnit.DAYS); // Huge Timeout, as we want to close the server manually
-		} catch (InterruptedException e) {
-			e.printStackTrace();
+			System.exit(-1);
 		}
 	}
 
